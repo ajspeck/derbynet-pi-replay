@@ -2,13 +2,14 @@ version: '3'
 
 services:
   replay:
-    image: ajspeck/pireplay:pidocker
+    image: ajspeck/pireplay:latest
     volumes:
       - /etc/timezone:/etc/timezone:ro
       - ./videos:/videos
     tty: true
     devices:
       - "/dev/vchiq"
+      - "/dev/vcsm"
     networks:
       - default
       - web
