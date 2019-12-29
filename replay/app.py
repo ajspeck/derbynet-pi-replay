@@ -14,22 +14,36 @@ import threading
 import logging
 import subprocess
 
+base_url='https://derby.speckfamily.org/derbynet/'
+action_cmd='action.php'
+username='Photo'
+password=''
 qCmd = queue.Queue()
-qResp = queue.Queue()
 ReplayData = collections.namedtuple('ReplayData', ['CMD', 'DATA'])
 fps=30
 
-def replay_response_thread(qCmd,qResp,ReplayData):
+def login():
+    print('Login')
     s = requests.Session()
-    replayURL=''
+    r = s.post(base_url+action_cmd, 
+                data = {'action':'login',
+                        'username':username,
+                        'password':password
+                        }, 
+                timeout=5.0)
+    print(r.content)
+    return s
+def replay_response_thread(qCmd,ReplayData):
+    s = requests.Session()
     while True:
         try:
             print('Request')
-            r = s.post('https://derby.speckfamily.org/derbynet/action.php', data = {'action':'replay-message',
-                                                                                  'status':'1',
-                                                                                   'finished-replay':'0',
-                                                                                   'replay-url':replayURL
-                                                                                  }, timeout=5.0)
+            r = s.post(base_url+action_cmd, 
+                        data = {'action':'replay-message',
+                                'status':'1',
+                                'finished-replay':'0'
+                                }, 
+                        timeout=5.0)
             xml=ET.fromstring(r.content)
             for c in xml.getchildren():
                 if c.tag == 'replay-message':
@@ -43,14 +57,9 @@ def replay_response_thread(qCmd,qResp,ReplayData):
                         qCmd.put(ReplayData('REPLAY',skipBack))
         except:
             pass
-        try:
-            resp=qResp.get(timeout=0.1)
-            if resp.CMD=='REPLAY-URL':
-                replayURL=resp.DATA
-                print(replayURL)
-        except queue.Empty:
-            pass
-def camera_thread(qCmd,qResp,ReplayData,camera):
+def camera_thread(qCmd,ReplayData,camera):
+    print('Logging In to Derbynet')
+    s = login()
     print('Camera Thread Started')
     stream = BoundedPiCameraCircularIO(camera, seconds=10)
     camera.start_recording(stream, format='h264', intra_period=1)
@@ -76,18 +85,23 @@ def camera_thread(qCmd,qResp,ReplayData,camera):
                     print('start timestamp: {0}'.format(tsStart))
                     print('end timestamp: {0}'.format(tsEnd))
                     camera.wait_recording(1.5)
-                    fName=os.path.join('/videos/',fName)
-                    first,last = stream.copy_to_bounded(fName,tsStart,tsEnd)
+                    fName_raw=os.path.join('/tmp/',fName)
+                    first,last = stream.copy_to_bounded(fName_raw,tsStart,tsEnd)
                     print('TS: {0}, {1}'.format(first.timestamp,last.timestamp))
-                    mp4fName = '{0}.mp4'.format(os.path.splitext(fName)[0])
-                    command = "/usr/bin/MP4Box -add '{1}' -fps {0} '{2}'".format(fps,fName,mp4fName)
+                    fName_mp4 = os.path.join('/tmp/','{0}.mp4'.format(os.path.splitext(fName)[0]))
+                    command = "/usr/bin/MP4Box -add '{1}' -fps {0} '{2}'".format(fps,fName_raw,fName_mp4)
                     try:
                         output = subprocess.check_output(command, stderr=subprocess.STDOUT,shell=True)
-                        os.remove(fName)
+                        os.remove(fName_raw)
+                        r = s.post(base_url+action_cmd, 
+                                    data = {'action':'video.upload'
+                                            },
+                                    files = {'video':open(fName_mp4, 'rb')},
+                                    timeout=10.0)
+                        print('File uploaded: {0}',r.content)
+                        os.remove(fName_mp4)
                     except subprocess.CalledProcessError as e:
                         print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output),flush=True)
-                    url='https://finish.speckfamily.org/videos/{0}'.format(os.path.split(mp4fName)[-1])
-                    qResp.put(ReplayData('REPLAY-URL',url))
             except queue.Empty:
                 pass
     finally:
@@ -128,11 +142,9 @@ app.logger.handlers = gunicorn_logger.handlers
 app.logger.setLevel(gunicorn_logger.level)
 
 ct=threading.Thread(target=camera_thread,kwargs={'qCmd':qCmd,
-                                                  'qResp':qResp,
                                                   'ReplayData':ReplayData,
                                                   'camera':camera})
 rt=threading.Thread(target=replay_response_thread,kwargs={'qCmd':qCmd,
-                                                  'qResp':qResp,
                                                   'ReplayData':ReplayData})
 rt.start()
 ct.start()
