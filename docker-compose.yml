@@ -29,25 +29,6 @@ services:
     environment:
       - CAMERA=pi
       - PYTHONUNBUFFERED=y
-  videos:
-    image: ajspeck/nginx-autoindex:pidocker
-    networks:
-      - web
-    volumes:
-      - /etc/timezone:/etc/timezone:ro
-      - ./videos:/usr/share/nginx/html/videos:ro
-    labels:
-      - "traefik.backend=vidoes"
-      - "traefik.docker.network=web"
-      - "traefik.frontend.rule=PathPrefix:/videos/"
-      - "traefik.enable=true"
-      - "traefik.port=80"
-      - "traefik.frontend.redirect.entryPoint=https"
-      - "traefik.frontend.redirect.permanent=true"
-      - "traefik.frontend.headers.SSLForceHost=true"
-      - "traefik.frontend.headers.SSLHost=finish.speckfamily.org"
-      - "traefik.frontend.headers.SSLRedirect=true"
-
 networks:
    web:
       external: true
