@@ -29,6 +29,9 @@ services:
     environment:
       - CAMERA=pi
       - PYTHONUNBUFFERED=y
+      - base_url=https://derby.speckfamily.org/derbynet/
+      - username=Photo
+      - fps=30
 networks:
    web:
       external: true

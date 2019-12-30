@@ -14,13 +14,13 @@ import threading
 import logging
 import subprocess
 
-base_url='https://derby.speckfamily.org/derbynet/'
+base_url=os.getenv('base_url','https://localhost/derbynet/')
 action_cmd='action.php'
-username='Photo'
-password=''
+username=os.getenv('username','Photo')
+password=os.getenv('password','')
 qCmd = queue.Queue()
 ReplayData = collections.namedtuple('ReplayData', ['CMD', 'DATA'])
-fps=30
+fps=int(os.getenv('fps',30))
 
 def login():
     print('Login')
@@ -53,7 +53,7 @@ def replay_response_thread(qCmd,ReplayData):
                         recName='{0}-{1}.h264'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
                         qCmd.put(ReplayData('START',recName))
                     elif parts[0]=='REPLAY':
-                        skipBack=float(parts[1])
+                        skipBack=min(float(parts[1]),8.0)
                         qCmd.put(ReplayData('REPLAY',skipBack))
         except:
             pass
@@ -117,7 +117,7 @@ app = Flask(__name__)
 
 
 
-@app.route('/preview')
+@app.route('/')
 def index():
     """Video streaming home page."""
     return render_template('index.html')

@@ -1,9 +1,13 @@
 <html>
   <head>
-    <title>Video Streaming Demonstration</title>
+    <title>Replay Video Preview</title>
+    <link rel="stylesheet" type="text/css" href="css/global.css">
   </head>
   <body>
-    <h1>Video Streaming Demonstration</h1>
+    <div class="banner">
+      <div class="banner_title">Replay Video Preview</div>
+      <img class="logo" src="img/derbynet.png">
+    </div>
     <img src="{{ url_for('video_feed') }}">
   </body>
 </html>
