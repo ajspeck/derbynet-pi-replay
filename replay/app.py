@@ -30,47 +30,49 @@ def check_ajax_return(response, reqtype):
             return True
         failure = xml.find("failure")
         if failure is not None:
-            print("Request {0} failed: {1}", reqtype, failure.text)
+            print("Request {0} failed: {1}".format(reqtype, failure.text))
             return False
         else:
-            print("Request {0} unknown response: {1}", reqtype, response.content)
+            print("Request {0} unknown response: {1}".format(reqtype, response.content))
             return False
     else:
-        print("Request {0} http error {1}: {2}", reqtype, response.status_code, response.reason)
-        
+        print("Request {0} http error {1}: {2}".format(reqtype, response.status_code, response.reason))
+
 def login():
     s = requests.Session()
-    r = s.post(base_url+action_cmd, 
+    r = s.post(base_url+action_cmd,
                 data = {'action':'login',
                         'username':username,
                         'password':password
-                        }, 
+                        },
                 timeout=5.0)
     if not(check_ajax_return(r, "login")):
         return None
     return s
+
 def replay_response_thread(qCmd,ReplayData):
     s = requests.Session()
     while True:
         try:
             #print('Request')
-            r = s.post(base_url+action_cmd, 
+            r = s.post(base_url+action_cmd,
                         data = {'action':'replay-message',
                                 'status':'1',
                                 'finished-replay':'0'
-                                }, 
+                                },
                         timeout=5.0)
             xml=ET.fromstring(r.content)
-            for c in xml.getchildren():
-                if c.tag == 'replay-message':
-                    parts = c.text.split(' ')
-                    print(parts)
-                    if parts[0]=='START':
-                        recName='{0}-{1}.h264'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
-                        qCmd.put(ReplayData('START',recName))
-                    elif parts[0]=='REPLAY':
-                        skipBack=min(float(parts[1]),8.0)
-                        qCmd.put(ReplayData('REPLAY',skipBack))
+            replaymsgs=xml.findall('replay-message')
+            for replaymsg in replaymsgs:
+                parts = replaymsg.text.split(' ')
+                print('replay-message')
+                print(parts)
+                if parts[0]=='START':
+                    recName='{0}-{1}.h264'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
+                    qCmd.put(ReplayData('START',recName))
+                elif parts[0]=='REPLAY':
+                    skipBack=min(float(parts[1]),8.0)
+                    qCmd.put(ReplayData('REPLAY',skipBack))
         except:
             pass
 def camera_thread(qCmd,ReplayData,camera):
@@ -119,7 +121,7 @@ def camera_thread(qCmd,ReplayData,camera):
                                     files = {'video':open(fName_mp4, 'rb')},
                                     timeout=10.0)
                         if check_ajax_return(r, "upload"):
-                            print('File uploaded: {0}',fName_mp4)
+                            print('File uploaded: {0}'.format(fName_mp4))
                             os.remove(fName_mp4)
                     except subprocess.CalledProcessError as e:
                         print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output),flush=True)
