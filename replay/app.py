@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, send_from_directory
 import picamera
 from replayCircularIO import BoundedPiCameraCircularIO
 from base_camera import BaseCamera
@@ -37,7 +37,7 @@ def replay_response_thread(qCmd,ReplayData):
     s = requests.Session()
     while True:
         try:
-            print('Request')
+            #print('Request')
             r = s.post(base_url+action_cmd, 
                         data = {'action':'replay-message',
                                 'status':'1',
