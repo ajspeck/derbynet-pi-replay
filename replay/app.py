@@ -22,8 +22,23 @@ qCmd = queue.Queue()
 ReplayData = collections.namedtuple('ReplayData', ['CMD', 'DATA'])
 fps=int(os.getenv('fps',30))
 
+def check_ajax_return(response, reqtype):
+    if response:
+        xml=ET.fromstring(response.content)
+        success = xml.find("success")
+        if success is not None:
+            return True
+        failure = xml.find("failure")
+        if failure is not None:
+            print("Request {0} failed: {1}", reqtype, failure.text)
+            return False
+        else:
+            print("Request {0} unknown response: {1}", reqtype, response.content)
+            return False
+    else:
+        print("Request {0} http error {1}: {2}", reqtype, response.status_code, response.reason)
+        
 def login():
-    print('Login')
     s = requests.Session()
     r = s.post(base_url+action_cmd, 
                 data = {'action':'login',
@@ -31,7 +46,8 @@ def login():
                         'password':password
                         }, 
                 timeout=5.0)
-    print(r.content)
+    if not(check_ajax_return(r, "login")):
+        return None
     return s
 def replay_response_thread(qCmd,ReplayData):
     s = requests.Session()
@@ -59,7 +75,11 @@ def replay_response_thread(qCmd,ReplayData):
             pass
 def camera_thread(qCmd,ReplayData,camera):
     print('Logging In to Derbynet')
-    s = login()
+    while True:
+        s = login()
+        if s is not None:
+            break
+        time.sleep(1.0)
     print('Camera Thread Started')
     stream = BoundedPiCameraCircularIO(camera, seconds=10)
     camera.start_recording(stream, format='h264', intra_period=1)
@@ -98,8 +118,9 @@ def camera_thread(qCmd,ReplayData,camera):
                                             },
                                     files = {'video':open(fName_mp4, 'rb')},
                                     timeout=10.0)
-                        print('File uploaded: {0}',r.content)
-                        os.remove(fName_mp4)
+                        if check_ajax_return(r, "upload"):
+                            print('File uploaded: {0}',fName_mp4)
+                            os.remove(fName_mp4)
                     except subprocess.CalledProcessError as e:
                         print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output),flush=True)
             except queue.Empty:
