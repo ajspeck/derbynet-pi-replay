@@ -137,6 +137,14 @@ def video_feed():
     return Response(gen(BaseCamera(camera)),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/css/<path:filename>')
+def cssRoute(filename):
+    return send_from_directory('/app/css', filename, conditional=True)
+
+@app.route('/img/<path:filename>')
+def imgRoute(filename):
+    return send_from_directory('/app/img', filename, conditional=True)
+
 gunicorn_logger = logging.getLogger('gunicorn.error')
 app.logger.handlers = gunicorn_logger.handlers
 app.logger.setLevel(gunicorn_logger.level)
