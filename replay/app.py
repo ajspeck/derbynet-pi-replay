@@ -73,8 +73,10 @@ def replay_response_thread(qCmd,ReplayData):
                 elif parts[0]=='REPLAY':
                     skipBack=min(float(parts[1]),8.0)
                     qCmd.put(ReplayData('REPLAY',skipBack))
-        except:
-            pass
+        except Exception as e:
+            print("Request Thread Exception")
+            print(e)
+            os.sleep(1.0)
 def camera_thread(qCmd,ReplayData,camera):
     print('Logging In to Derbynet')
     while True:
@@ -127,6 +129,9 @@ def camera_thread(qCmd,ReplayData,camera):
                         print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output),flush=True)
             except queue.Empty:
                 pass
+    except Exception as e:
+        print("Camera Thread Exception")
+        print(e)
     finally:
         camera.stop_recording()
 
