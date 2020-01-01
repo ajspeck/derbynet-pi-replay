@@ -137,6 +137,16 @@ def camera_thread(qCmd,ReplayData,camera):
                         if check_ajax_return(r, "upload"):
                             print('File uploaded: {0}'.format(fName_mp4))
                             os.remove(fName_mp4)
+                        else:
+                            s = login()
+                            r = s.post(base_url+action_cmd, 
+                                        data = {'action':'video.upload'
+                                                },
+                                        files = {'video':open(fName_mp4, 'rb')},
+                                        timeout=10.0)
+                            if check_ajax_return(r, "upload"):
+                                print('File uploaded: {0}'.format(fName_mp4))
+                                os.remove(fName_mp4)
                     except subprocess.CalledProcessError as e:
                         print('FAIL:\ncmd:{}\noutput:{}'.format(e.cmd, e.output),flush=True)
             except queue.Empty:
