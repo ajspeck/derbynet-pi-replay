@@ -84,7 +84,7 @@ def replay_response_thread(qCmd,ReplayData):
         except Exception as e:
             print("Request Thread Exception")
             print(e)
-            os.sleep(1.0)
+            time.sleep(1.0)
 def camera_thread(qCmd,ReplayData,camera):
     print('Logging In to Derbynet')
     while True:
