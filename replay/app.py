@@ -138,6 +138,7 @@ def camera_thread(qCmd,ReplayData,camera):
                             print('File uploaded: {0}'.format(fName_mp4))
                             os.remove(fName_mp4)
                         else:
+                            print('Re-trying file upload.')
                             s = login()
                             r = s.post(base_url+action_cmd, 
                                         data = {'action':'video.upload'
