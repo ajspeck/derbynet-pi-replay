@@ -52,7 +52,9 @@ def login():
 
 def replay_response_thread(qCmd,ReplayData):
     s = requests.Session()
+    i = 0
     while True:
+        i+=1
         try:
             #print('Request')
             r = s.post(base_url+action_cmd,
@@ -61,6 +63,12 @@ def replay_response_thread(qCmd,ReplayData):
                                 'finished-replay':'0'
                                 },
                         timeout=5.0)
+            if not(check_ajax_return(r, 'replay-message')):
+                print('Replay-message request failed. Restarting session')
+                s = requests.Session()
+                continue
+            if i%100 == 0:
+                print('Request OK: {0}, {1}'.format(i,r.content))
             xml=ET.fromstring(r.content)
             replaymsgs=xml.findall('replay-message')
             for replaymsg in replaymsgs:
@@ -85,6 +93,7 @@ def camera_thread(qCmd,ReplayData,camera):
             break
         time.sleep(1.0)
     print('Camera Thread Started')
+    i = 0
     stream = BoundedPiCameraCircularIO(camera, seconds=10)
     camera.start_recording(stream, format='h264', intra_period=1)
     time.sleep(2) #wait for camera to warm up
@@ -92,8 +101,11 @@ def camera_thread(qCmd,ReplayData,camera):
     print('Camera Loop Started')
     try:
         while True:
+            i+=1
             #print('Camera Loop')
             camera.wait_recording(0)
+            if i%100 == 0:
+                print('Camera OK: {0}'.format(i))
             try:
                 cmd=qCmd.get(timeout=1.0)
                 print('CMD: {0}, {1}'.format(cmd.CMD,cmd.DATA))
