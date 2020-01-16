@@ -79,7 +79,11 @@ def replay_response_thread(qCmd,ReplayData):
                     recName='{0}-{1}.h264'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
                     qCmd.put(ReplayData('START',recName))
                 elif parts[0]=='REPLAY':
-                    skipBack=min(float(parts[1]),8.0)
+                    if len(parts)>=5:
+                        skipBack=min(float(parts[4]),8.0)
+                    else:
+                        print('received old-style REPLAY msg')
+                        skipBack=min(float(parts[1]),8.0)
                     qCmd.put(ReplayData('REPLAY',skipBack))
         except Exception as e:
             print("Request Thread Exception")
