@@ -5,6 +5,7 @@ services:
     image: ajspeck/pireplay:latest
     volumes:
       - /etc/timezone:/etc/timezone:ro
+#      - ./replay:/app
     tty: true
     devices:
       - "/dev/vchiq"
@@ -28,9 +29,11 @@ services:
     environment:
       - CAMERA=pi
       - PYTHONUNBUFFERED=y
-      - base_url=https://derby.speckfamily.org/derbynet/
+      - base_url=http://derby.speckfamily.org:8080/derbynet/
       - username=Photo
       - fps=30
+      - buffersize=15
+      - maxplaybacklength=5
 networks:
    web:
       external: true

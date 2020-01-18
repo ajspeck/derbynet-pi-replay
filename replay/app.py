@@ -21,7 +21,8 @@ password=os.getenv('password','')
 qCmd = queue.Queue()
 ReplayData = collections.namedtuple('ReplayData', ['CMD', 'DATA'])
 fps=int(os.getenv('fps',30))
-
+buffersize=int(os.getenv('buffersize','10'))
+maxplaybacklength=float(os.getenv('maxplaybacklength','5.0'))
 def check_ajax_return(response, reqtype):
     if response:
         xml=ET.fromstring(response.content)
@@ -63,6 +64,7 @@ def replay_response_thread(qCmd,ReplayData):
                                 'finished-replay':'0'
                                 },
                         timeout=5.0)
+            #print('Received')
             if not(check_ajax_return(r, 'replay-message')):
                 print('Replay-message request failed. Restarting session')
                 s = requests.Session()
@@ -98,8 +100,8 @@ def camera_thread(qCmd,ReplayData,camera):
         time.sleep(1.0)
     print('Camera Thread Started')
     i = 0
-    stream = BoundedPiCameraCircularIO(camera, seconds=10)
-    camera.start_recording(stream, format='h264', intra_period=1)
+    stream = BoundedPiCameraCircularIO(camera, seconds=buffersize)
+    camera.start_recording(stream, format='h264', intra_period=5)
     time.sleep(2) #wait for camera to warm up
     fName='test.h264' #Initial file
     print('Camera Loop Started')
@@ -120,11 +122,11 @@ def camera_thread(qCmd,ReplayData,camera):
                     # stream to disk
                     now = camera.timestamp
                     tsStart = now-1e6*float(cmd.DATA)
-                    postTriggerSec=1.0
-                    tsEnd = now+1e6*postTriggerSec
+                    postTriggerSec=0.0
+                    tsEnd = tsStart+min(1e6*(postTriggerSec+float(cmd.DATA)),1e6*maxplaybacklength)
                     print('start timestamp: {0}'.format(tsStart))
                     print('end timestamp: {0}'.format(tsEnd))
-                    camera.wait_recording(1.5)
+                    camera.wait_recording(0.25)
                     fName_raw=os.path.join('/tmp/',fName)
                     first,last = stream.copy_to_bounded(fName_raw,tsStart,tsEnd)
                     print('TS: {0}, {1}'.format(first.timestamp,last.timestamp))
