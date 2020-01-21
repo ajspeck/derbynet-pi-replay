@@ -1,4 +1,4 @@
-FROM balenalib/raspberry-pi-python:3.7-stretch-run
+FROM balenalib/raspberry-pi-python:3.7.5-stretch-run
 RUN apt-get update \
     && apt-get install -y \
            libraspberrypi0 \
@@ -12,7 +12,7 @@ RUN export READTHEDOCS=True;pip install -r /app/requirements-pi.txt --no-cache-d
 RUN pip uninstall -y picamera
 RUN mkdir /install \
     && cd /install \
-    && git clone https://github.com/waveform80/picamera.git \
+    && git clone https://github.com/ajspeck/picamera.git \
     && cd /install/picamera \
     && export READTHEDOCS=True;python setup.py install \
     && cd / \

@@ -78,7 +78,7 @@ def replay_response_thread(qCmd,ReplayData):
                 print('replay-message')
                 print(parts)
                 if parts[0]=='START':
-                    recName='{0}-{1}.h264'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
+                    recName='{0}-{1}.mp4'.format(parts[1],datetime.datetime.now().strftime("%y%m%d_%H%M%S"))
                     qCmd.put(ReplayData('START',recName))
                 elif parts[0]=='REPLAY':
                     if len(parts)>=5:
@@ -101,9 +101,9 @@ def camera_thread(qCmd,ReplayData,camera):
     print('Camera Thread Started')
     i = 0
     stream = BoundedPiCameraCircularIO(camera, seconds=buffersize)
-    camera.start_recording(stream, format='h264', intra_period=5)
+    camera.start_recording(stream, format='mp4', intra_period=5)
     time.sleep(2) #wait for camera to warm up
-    fName='test.h264' #Initial file
+    fName='test.mp4' #Initial file
     print('Camera Loop Started')
     try:
         while True:
@@ -127,14 +127,10 @@ def camera_thread(qCmd,ReplayData,camera):
                     print('start timestamp: {0}'.format(tsStart))
                     print('end timestamp: {0}'.format(tsEnd))
                     camera.wait_recording(0.25)
-                    fName_raw=os.path.join('/tmp/',fName)
-                    first,last = stream.copy_to_bounded(fName_raw,tsStart,tsEnd)
+                    fName_mp4=os.path.join('/tmp/',fName)
+                    first,last = stream.copy_to_bounded(fName_mp4,tsStart,tsEnd)
                     print('TS: {0}, {1}'.format(first.timestamp,last.timestamp))
-                    fName_mp4 = os.path.join('/tmp/','{0}.mp4'.format(os.path.splitext(fName)[0]))
-                    command = "/usr/bin/MP4Box -add '{1}' -fps {0} '{2}'".format(fps,fName_raw,fName_mp4)
                     try:
-                        output = subprocess.check_output(command, stderr=subprocess.STDOUT,shell=True)
-                        os.remove(fName_raw)
                         r = s.post(base_url+action_cmd, 
                                     data = {'action':'video.upload'
                                             },
