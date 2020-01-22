@@ -1,4 +1,4 @@
-FROM balenalib/raspberry-pi-python:3.7-stretch-run
+FROM balenalib/raspberry-pi-python:3.7.5-stretch-run
 RUN apt-get update \
     && apt-get install -y \
            libraspberrypi0 \
